@@ -1,6 +1,9 @@
+from django.db.models import F
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
-from .models import Question
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
+
+from .models import Question, Choice
 from django.template import loader
 from django.shortcuts import render
 from django.http import Http404
@@ -28,8 +31,16 @@ def detail(request, question_id):
     # return HttpResponse("Question doesn't exist")
     # return HttpResponse(f"You're looking at question {question_id}")
 
-def result(request, question_id):
+def vote(request, question_id):
+    question = get_object_or_404(Question,id=question_id)
+    try:
+        selected_choice = question.choice_set.get(id=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        context = {'question': question, 'error_message': "You didn't select a choice."}
+    else:
+        selected_choice.votes = F('votes') + 1
+        selected_choice.save()
+        return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+def results(request, question_id):
     return HttpResponse(f"You're looking at result {question_id}")
 
-def vote(request, question_id):
-    return HttpResponse(f"You're looking at vote {question_id}")
